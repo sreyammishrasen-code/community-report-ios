@@ -1,0 +1,13 @@
+node_modules/
+.expo/
+dist/
+dist-ios/
+web-build/
+expo-env.d.ts
+*.tsbuildinfo
+.DS_Store
+.env*
+!.env.example
+
+# The backend is maintained in its own Git repository.
+/server/

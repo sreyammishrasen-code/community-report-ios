@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Community Report",
+    "slug": "community-report",
+    "version": "1.0.0",
+    "icon": "./assets/icon.png",
+    "scheme": "communityreport",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F8F7F2",
+    "ios": {
+      "bundleIdentifier": "com.sreyamsen.communityreport",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow Community Report to take a photo of the issue you are reporting.",
+          "photosPermission": "Allow Community Report to choose a photo for your report."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Community Report to use your location to identify where the reported issue is located."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Community Report to record a description for transcription.",
+          "enableBackgroundPlayback": false,
+          "enableBackgroundRecording": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
