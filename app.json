@@ -43,10 +43,18 @@
           "enableBackgroundPlayback": false,
           "enableBackgroundRecording": false
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a77deac2-89c1-4051-a20e-d684ffb1b501"
+      }
+    },
+    "owner": "sreyam"
   }
 }
