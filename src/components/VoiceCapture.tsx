@@ -11,7 +11,7 @@ import { Button } from "./Controls";
 import { ErrorNote, Note, TextLink, ui } from "./UI";
 import { transcribe } from "../api";
 import { discardAudio } from "../media";
-import type { Connection } from "../store";
+import type { Connection } from "../config";
 
 function recordingError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
@@ -187,8 +187,8 @@ export function VoiceCapture({
       )}
       {!enabled && (
         <Text style={ui.small}>
-          Voice transcription needs an AI connection and your consent. Text
-          reporting always works without AI.
+          Voice transcription is available when optional AI is enabled and the
+          service is online. Text reporting always works without AI.
         </Text>
       )}
       <ErrorNote message={error} />

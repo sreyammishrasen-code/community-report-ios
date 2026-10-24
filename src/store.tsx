@@ -25,14 +25,14 @@ import {
   type Report,
   type SavedState,
 } from "./domain";
-import { clearMedia, clearTemporaryMedia } from "./media";
+import { clearMedia, clearTemporaryMedia, removePhoto } from "./media";
 import { colors } from "./theme";
 import { PersistenceQueue } from "./persistence";
+import { backendConnection, type Connection } from "./config";
 
 const DATA_KEY = "moco.state.v1";
 const PROFILE_KEY = "moco.profile.v1";
 const CONNECTION_KEY = "moco.connection.v1";
-export type Connection = { url: string; token: string };
 async function secretGet(key: string) {
   return Platform.OS === "web"
     ? AsyncStorage.getItem(key)
@@ -54,8 +54,8 @@ type Store = {
   storageError: string | null;
   create: () => Promise<Report>;
   put: (r: Report) => Promise<void>;
+  deleteDraft: (id: string) => Promise<void>;
   saveProfile: (c?: Contact) => Promise<void>;
-  saveConnection: (c: Connection) => Promise<void>;
   preferences: (p: Partial<SavedState["preferences"]>) => Promise<void>;
   clear: () => Promise<void>;
   flush: () => Promise<void>;
@@ -65,10 +65,6 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [state, setState] = useState<SavedState>(initialState);
   const current = useRef(state);
   const [profile, setProfile] = useState<Contact>();
-  const [connection, setConnection] = useState<Connection>({
-    url: "",
-    token: "",
-  });
   const [ready, setReady] = useState(false);
   const [storageError, setError] = useState<string | null>(null);
   const loadFailed = useRef(false);
@@ -87,10 +83,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
     void (async () => {
       try {
         await clearTemporaryMedia();
-        const [data, contact, endpoint] = await Promise.all([
+        const [data, contact] = await Promise.all([
           AsyncStorage.getItem(DATA_KEY),
           secretGet(PROFILE_KEY),
-          secretGet(CONNECTION_KEY),
+          // Remove credentials saved by older builds. Backend configuration is
+          // now supplied by the app build and is not user-editable.
+          secretSet(CONNECTION_KEY, null),
         ]);
         if (data) {
           const saved = stateSchema.parse(JSON.parse(data));
@@ -98,11 +96,6 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setState(saved);
         }
         if (contact) setProfile(contactSchema.parse(JSON.parse(contact)));
-        if (endpoint) {
-          const c = JSON.parse(endpoint);
-          if (typeof c.url === "string" && typeof c.token === "string")
-            setConnection(c);
-        }
       } catch {
         loadFailed.current = true;
         setError(
@@ -152,9 +145,23 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const value: Store = {
     state,
     profile,
-    connection,
+    connection: backendConnection,
     storageError,
     put,
+    deleteDraft: async (id) => {
+      const report = current.current.reports.find((item) => item.id === id);
+      if (!report)
+        throw new Error("This draft no longer exists on this device.");
+      if (report.status !== "draft")
+        throw new Error(
+          "Only drafts can be deleted. Submitted reports can be archived instead.",
+        );
+      await commit({
+        ...current.current,
+        reports: current.current.reports.filter((item) => item.id !== id),
+      });
+      await removePhoto(report.photo).catch(() => {});
+    },
     create: async () => {
       if (current.current.reports.length >= 200)
         throw new Error(
@@ -173,12 +180,6 @@ export function StoreProvider({ children }: PropsWithChildren) {
       await enqueue(PROFILE_KEY, async () => {
         await secretSet(PROFILE_KEY, c ? JSON.stringify(c) : null);
         setProfile(c);
-      });
-    },
-    saveConnection: async (c) => {
-      await enqueue(CONNECTION_KEY, async () => {
-        await secretSet(CONNECTION_KEY, JSON.stringify(c));
-        setConnection(c);
       });
     },
     preferences: (p) =>
@@ -201,7 +202,6 @@ export function StoreProvider({ children }: PropsWithChildren) {
       current.current = initialState;
       setState(initialState);
       setProfile(undefined);
-      setConnection({ url: "", token: "" });
       loadFailed.current = false;
       queue.current!.reset();
       setError(null);

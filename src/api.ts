@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 import { File } from "expo-file-system";
 import { analysisSchema, type Report } from "./domain";
 import { photoData } from "./media";
-import type { Connection } from "./store";
+import type { Connection } from "./config";
 
 export function connectionError(c: Connection) {
   try {
@@ -26,11 +26,11 @@ export function connectionError(c: Connection) {
       (url.pathname !== "/" && url.pathname !== "")
     )
       return "Use a server origin only, without a path, credentials or query.";
-    if (!c.token.trim())
-      return "Enter the backend access token, not your OpenAI API key.";
+    if (c.token.trim().length < 24)
+      return "FixMoco’s optional AI service is not available in this build. You can continue without AI.";
     return null;
   } catch {
-    return "Enter your backend URL, for example https://api.example.com.";
+    return "FixMoco’s optional AI service is not configured correctly. You can continue without AI.";
   }
 }
 async function request(c: Connection, path: string, body?: BodyInit) {
@@ -75,7 +75,7 @@ async function request(c: Connection, path: string, body?: BodyInit) {
           "This phone cannot use localhost to reach your computer. Use the computer’s Wi-Fi address, for example http://192.168.0.103:3001.",
         );
       throw new Error(
-        "Could not reach the backend. Make sure it is running, listening on 0.0.0.0, and that this device is on the same Wi-Fi network.",
+        "Could not reach FixMoco’s optional AI service. Check your internet connection and try again, or continue without AI.",
       );
     }
     throw error;
@@ -83,7 +83,6 @@ async function request(c: Connection, path: string, body?: BodyInit) {
     clearTimeout(timer);
   }
 }
-export const checkConnection = (c: Connection) => request(c, "/health");
 export async function analyze(c: Connection, r: Report) {
   // Contact information and GPS are deliberately not sent to the AI endpoint.
   return analysisSchema.parse(

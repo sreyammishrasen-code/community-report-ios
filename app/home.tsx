@@ -5,7 +5,13 @@ import { Button, sharedStyles } from "../src/components/Controls";
 import { Icon } from "../src/components/Icon";
 import { Screen } from "../src/components/Screen";
 import { ErrorNote, Header, Nav, Note, Row, Title } from "../src/components/UI";
-import { categoryName, addressText, statusLabel } from "../src/domain";
+import { DraftRow } from "../src/components/DraftRow";
+import {
+  categoryName,
+  addressText,
+  statusLabel,
+  updatedDateTime,
+} from "../src/domain";
 import { useStore } from "../src/store";
 import { colors } from "../src/theme";
 
@@ -60,22 +66,36 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <Text style={sharedStyles.eyebrow}>PICK UP WHERE YOU LEFT OFF</Text>
         {drafts.length ? (
-          drafts.slice(0, 2).map((r) => (
-            <Row
-              key={r.id}
-              title={categoryName(r.category)}
-              subtitle={
-                addressText(r.location) || "Saved on this device · not sent"
-              }
-              icon="edit"
-              onPress={() =>
-                router.push({
-                  pathname: "/report/[id]",
-                  params: { id: r.id },
-                })
-              }
-            />
-          ))
+          <>
+            <Text style={styles.swipeHint}>
+              Swipe left on a draft to delete it.
+            </Text>
+            {drafts.slice(0, 2).map((r) => (
+              <DraftRow
+                key={r.id}
+                title={categoryName(r.category)}
+                subtitle={`${addressText(r.location) || "Saved on this device · not sent"}\n${updatedDateTime(r.updatedAt)}`}
+                onPress={() =>
+                  router.push({
+                    pathname: "/report/[id]",
+                    params: { id: r.id },
+                  })
+                }
+                onDelete={() => {
+                  setError("");
+                  void store
+                    .deleteDraft(r.id)
+                    .catch((reason) =>
+                      setError(
+                        reason instanceof Error
+                          ? reason.message
+                          : "The draft could not be deleted.",
+                      ),
+                    );
+                }}
+              />
+            ))}
+          </>
         ) : (
           <Note>
             No drafts yet. Your report is saved as you go—even offline.
@@ -115,4 +135,5 @@ const styles = StyleSheet.create({
   heroTitle: { color: colors.white, fontSize: 23, fontWeight: "600" },
   heroBody: { color: colors.onForest, fontSize: 15, lineHeight: 24 },
   section: { marginTop: 28, gap: 14 },
+  swipeHint: { color: colors.muted, fontSize: 12, lineHeight: 18 },
 });

@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Platform, Switch, Text, View } from "react-native";
 import { Button, sharedStyles } from "../src/components/Controls";
@@ -15,26 +15,15 @@ import {
   ui,
 } from "../src/components/UI";
 import { contactError, emptyContact } from "../src/domain";
-import { checkConnection, connectionError } from "../src/api";
 import { useStore } from "../src/store";
 
 type Section =
-  | "main"
-  | "profile"
-  | "privacy"
-  | "notifications"
-  | "language"
-  | "delete"
-  | "connection";
+  "main" | "profile" | "privacy" | "notifications" | "language" | "delete";
 export default function YouScreen() {
   const store = useStore();
   const router = useRouter();
-  const params = useLocalSearchParams<{ section?: string }>();
-  const [section, setSection] = useState<Section>(
-    params.section === "connection" ? "connection" : "main",
-  );
+  const [section, setSection] = useState<Section>("main");
   const [contact, setContact] = useState(store.profile ?? emptyContact);
-  const [connection, setConnection] = useState(store.connection);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -87,16 +76,6 @@ export default function YouScreen() {
             PREFERENCES
           </Text>
           <Row
-            title="AI connection"
-            subtitle={
-              store.connection.url
-                ? "Backend configured · tap to test or edit"
-                : "Optional · enable photo analysis and transcription"
-            }
-            icon="spark"
-            onPress={() => go("connection")}
-          />
-          <Row
             title="Report updates"
             subtitle="County status synchronization is not connected"
             icon="bell"
@@ -124,8 +103,8 @@ export default function YouScreen() {
             onPress={() => go("delete")}
           />
           <Text style={ui.small}>
-            MoCo Report · 0.1.0 · Independent community app, not an official
-            county service.
+            FixMoco · 1.0.0 · Independent community app, not an official county
+            service.
           </Text>
         </>
       )}
@@ -192,85 +171,6 @@ export default function YouScreen() {
           />
         </>
       )}
-      {section === "connection" && (
-        <>
-          <Title sub="For the app owner or a trusted test device.">
-            Connect the AI service.
-          </Title>
-          <Note>
-            Run the included Node.js backend and enter its address and access
-            token here. Never put an OpenAI API key in the app. On a phone, use
-            your computer’s Wi-Fi address instead of localhost (for example,
-            http://192.168.0.103:3001).
-          </Note>
-          <Field
-            label="Backend URL"
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={connection.url}
-            maxLength={250}
-            placeholder={
-              Platform.OS === "web"
-                ? "https://api.example.com"
-                : "http://192.168.0.103:3001"
-            }
-            onChangeText={(url) => setConnection({ ...connection, url })}
-          />
-          <Field
-            label="Backend access token"
-            autoCapitalize="none"
-            autoCorrect={false}
-            secureTextEntry
-            value={connection.token}
-            maxLength={200}
-            onChangeText={(token) => setConnection({ ...connection, token })}
-          />
-          <Button
-            label={busy ? "Checking…" : "Test and save connection"}
-            disabled={busy}
-            onPress={() =>
-              task(async () => {
-                const c = {
-                  url: connection.url.trim().replace(/\/$/, ""),
-                  token: connection.token.trim(),
-                };
-                const invalid = connectionError(c);
-                if (invalid) throw new Error(invalid);
-                const health = await checkConnection(c);
-                await store.saveConnection(c);
-                setNotice(
-                  health.aiAvailable
-                    ? "Connected. AI is available; each report still requires your consent."
-                    : "Connected, but the backend needs an OpenAI API key. Manual reporting is available.",
-                );
-              })
-            }
-          />
-          <TextLink
-            label="Disconnect AI service"
-            onPress={() =>
-              task(async () => {
-                await store.saveConnection({ url: "", token: "" });
-                setConnection({ url: "", token: "" });
-                await store.preferences({ aiConsent: false });
-                setNotice("Disconnected. Reports stay on this device.");
-              })
-            }
-          />
-          <Note warning>
-            For public distribution, deploy HTTPS with per-user authentication
-            and abuse controls. This development token is suitable only for a
-            trusted pilot. On a phone, localhost means the phone—not your
-            computer.
-          </Note>
-          {params.section === "connection" && (
-            <TextLink
-              label="Return to my report"
-              onPress={() => router.back()}
-            />
-          )}
-        </>
-      )}
       {section === "privacy" && (
         <>
           <Title>Your report. Your choice.</Title>
@@ -284,15 +184,15 @@ export default function YouScreen() {
             </Text>
             <Text style={sharedStyles.body}>
               {Platform.OS === "web"
-                ? "This browser uses local storage for reports, profile and the backend token. Avoid shared browsers; clearing site storage removes these records."
-                : "The reusable contact profile and backend token use the device secure store. Photos use app-private file storage."}
+                ? "This browser uses local storage for reports and the reusable contact profile. Avoid shared browsers; clearing site storage removes these records."
+                : "The reusable contact profile uses the device secure store. Photos use app-private file storage."}
             </Text>
           </View>
           <View style={ui.card}>
             <Text style={ui.rowTitle}>Optional AI preparation</Text>
             <Text style={sharedStyles.body}>
               With your consent, your description and selected photo pass
-              through your configured backend to OpenAI. Audio is sent for
+              through the FixMoco service to OpenAI. Audio is sent for
               transcription. Contact fields and GPS are excluded from the AI
               request, but anything you say or include in a photo may contain
               personal information.
@@ -379,9 +279,9 @@ export default function YouScreen() {
           <Title>Delete your app data?</Title>
           <Note warning>
             This permanently removes all local drafts, photos, report history,
-            saved contact details and the backend token from this app. It does
-            not cancel county requests, erase county records, clear your
-            clipboard, or delete copies you exported or backed up.
+            and saved contact details from this app. It does not cancel county
+            requests, erase county records, clear your clipboard, or delete
+            copies you exported or backed up.
           </Note>
           <Text style={sharedStyles.body}>
             There are {store.state.reports.length} reports on this device. Share

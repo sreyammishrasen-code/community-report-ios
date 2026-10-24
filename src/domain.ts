@@ -152,6 +152,14 @@ export function newReport(id: string): Report {
 }
 export const categoryName = (id?: Category) =>
   categories.find((c) => c.id === id)?.name ?? "New report";
+export function updatedDateTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Update time unavailable";
+  return `Updated ${new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date)}`;
+}
 export function addressText(l: IssueLocation) {
   return [
     l.kind === "intersection"

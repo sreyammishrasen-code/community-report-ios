@@ -58,6 +58,7 @@ import {
 import { analyze } from "../../src/api";
 import { keepPhoto, removePhoto } from "../../src/media";
 import { useStore } from "../../src/store";
+import { aiServiceConfigured } from "../../src/config";
 import { colors } from "../../src/theme";
 import { withTimeout } from "../../src/async";
 
@@ -298,7 +299,7 @@ function ReportFlow({ report, first }: { report: Report; first: Phase }) {
       }
       if (
         !store.state.preferences.aiConsent ||
-        !store.connection.url ||
+        !aiServiceConfigured ||
         !online
       ) {
         go("categories");
@@ -620,8 +621,8 @@ function ReportFlow({ report, first }: { report: Report; first: Phase }) {
           />
           <Text style={ui.small}>{r.description.length}/2000 characters</Text>
           <Note>
-            Optional AI: your photo and description go through your configured
-            backend to OpenAI. Voice recordings are sent for transcription.
+            Optional AI: your photo, description, or voice recording goes
+            through the FixMoco service to OpenAI only with your consent.
             Contact details and GPS are not included. AI suggestions can be
             wrong—review them.
           </Note>
@@ -637,9 +638,7 @@ function ReportFlow({ report, first }: { report: Report; first: Phase }) {
           <VoiceCapture
             connection={store.connection}
             enabled={
-              store.state.preferences.aiConsent &&
-              !!store.connection.url &&
-              online
+              store.state.preferences.aiConsent && aiServiceConfigured && online
             }
             onText={(text) =>
               edit({
@@ -652,17 +651,6 @@ function ReportFlow({ report, first }: { report: Report; first: Phase }) {
             }
             onBusy={setVoiceBusy}
           />
-          {!store.connection.url && (
-            <TextLink
-              label="Set up AI connection"
-              onPress={() =>
-                router.push({
-                  pathname: "/you",
-                  params: { section: "connection" },
-                })
-              }
-            />
-          )}
           <View style={ui.actions}>
             <Button
               label="Continue to location"
@@ -806,9 +794,7 @@ function ReportFlow({ report, first }: { report: Report; first: Phase }) {
           )}
           <Button
             label={
-              store.state.preferences.aiConsent &&
-              store.connection.url &&
-              online
+              store.state.preferences.aiConsent && aiServiceConfigured && online
                 ? "Prepare my report"
                 : "Continue to category"
             }
@@ -976,8 +962,11 @@ function ReportFlow({ report, first }: { report: Report; first: Phase }) {
             setRemember,
           )}
           <Note>
-            A copy of contact details stays with this report. Turning off
-            Remember removes the reusable profile, not report history.
+            FixMoco does not store your personal contact data on its servers. A
+            copy stays on this device with this report and is sent to MC311 only
+            after you review and confirm. Contact details are never included in
+            AI requests. Turning off Remember removes the reusable profile, not
+            report history.
           </Note>
           <Button
             label="Save and review"

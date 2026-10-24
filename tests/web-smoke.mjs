@@ -59,6 +59,12 @@ try {
   await text("Before your first report.");
   await click("Start my report");
   await text("What did you notice?");
+  assert.equal(
+    await page.evaluate(() =>
+      document.body.innerText.includes("Set up AI connection"),
+    ),
+    false,
+  );
   await fill(
     "Description",
     "Several potholes in the road near the library entrance.",
@@ -82,7 +88,7 @@ try {
   await text("Enter a street and city");
   await fill("Nearest building number", "123");
   await fill("Street name", "Example");
-  await fill("Street type · optional (ST, RD, AVE…)", "ST");
+  await fill("Street type (ST, RD, AVE…) · recommended", "ST");
   await fill("City or community", "Rockville");
   await page
     .locator('[aria-label="I confirm this is the issue location"]')
@@ -147,6 +153,12 @@ try {
   await click("Back to my reports");
   await page.locator('::-p-aria(You[role="tab"])').click();
   await text("Your preferences.");
+  assert.equal(
+    await page.evaluate(() =>
+      document.body.innerText.includes("AI connection"),
+    ),
+    false,
+  );
   await click("Privacy & storage");
   await text("Your report. Your choice.");
   await click("Manage app data");
